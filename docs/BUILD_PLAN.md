@@ -34,7 +34,7 @@ This document is the complete specification for the HODL MVP. Build exactly what
 
 **Code conventions**
 
-- TypeScript, strict mode, Node.js 20 LTS, ES modules.
+- TypeScript, strict mode, Node.js 22 LTS, ES modules.
 - Use the `ethers` v5 package that `@dhedge/v2-sdk` uses. Do not add viem or a second blockchain library.
 - Validate all inputs with `zod`.
 - Small files, clear names, comments only where the logic is not obvious.
@@ -130,7 +130,7 @@ All accounts belong to HODL and are opened by the founder, except where the tabl
 | `tsx` | both | Run TypeScript scripts during development |
 | `typescript` | both | Compile |
 
-**Local tools on the founder's Mac:** Node.js 20 LTS (with npm), Git, Claude Code, Postman, a browser with Rabby or MetaMask.
+**Local tools on the founder's Mac:** Node.js 22 LTS (with npm), Git, Claude Code, Postman, a browser with Rabby or MetaMask.
 
 **Wallets**
 
@@ -148,7 +148,7 @@ The founder does these steps manually. Claude Code can help with commands, but i
 **4.1 Local installs (macOS)**
 
 - [ ] Git: run `xcode-select --install` in Terminal (skip if `git --version` already prints a version).
-- [ ] Node.js 20 LTS: install from nodejs.org, then check that `node --version` prints `v20.x`.
+- [ ] Node.js 22 LTS: install from nodejs.org, then check that `node --version` prints `v22.x`.
 - [ ] Claude Code: already installed.
 - [ ] Postman: install the desktop app.
 - [ ] Browser wallet: Rabby or MetaMask.
@@ -307,7 +307,7 @@ Each step uses these parts as needed: **Goal**, **Founder does**, **Prompt for C
 
 ```text
 Read sections 1, 6.1, 6.3 and 6.4 of the build plan. Do step 1.1 only.
-In this repo: create an npm project (TypeScript strict, ES modules, Node 20).
+In this repo: create an npm project (TypeScript strict, ES modules, Node 22).
 Install: @dhedge/v2-sdk, dotenv, zod, tsx, typescript.
 Create .gitignore (as in 6.1) and .env.example (hodl-api variable names from 6.3, no values).
 Create src/chain/constants.ts (values from 6.4) and src/chain/provider.ts
@@ -581,7 +581,7 @@ After the deploy, tell me to put the public URL in .env as HODL_API_URL.
 
 ```text
 Read sections 1, 6.2 and 6.4 of the build plan. Do step 2.7 only.
-Create an npm package "hodl-agent" (TypeScript strict, ES modules, Node 20).
+Create an npm package "hodl-agent" (TypeScript strict, ES modules, Node 22).
 Install @dhedge/v2-sdk, commander, @clack/prompts, zod, typescript.
 package.json: "bin": {"hodl-agent": "dist/cli.js"}, "prepare": "tsc", "files": ["dist"].
 src/cli.ts starts with a node shebang and shows --help with the commands init, onboard,
@@ -863,7 +863,7 @@ The demo takes about 15 minutes and shows the full pipeline live on Base mainnet
 **One day before**
 
 - [ ] Step 3.6 is done, and the `demo-user-1` deposit is more than 24 hours old.
-- [ ] Send the VC the requirement: Node.js 20 LTS installed on their Mac. Fallback: the clean macOS user account on the founder's laptop.
+- [ ] Send the VC the requirement: Node.js 22 LTS installed on their Mac. Fallback: the clean macOS user account on the founder's laptop.
 
 **30 minutes before**
 
@@ -918,7 +918,7 @@ Use these fallbacks in this order. Do not invent other solutions; if none applie
 | `listen` stops trading | The Mac slept or the terminal closed | Run `listen` with `caffeinate -i`; restart `listen` and the signal loop |
 | A signal returns 401 | Wrong or missing `x-signal-secret` | Use the same `HODL_SIGNAL_SECRET` in `listen` and in the sender |
 | Agent warns "trade not recorded" | HODL API not reachable | The trade is valid on-chain; HODL records the next trades when the API is back |
-| `npx github:...` fails on the VC's laptop | Node.js missing or older than 20 | Install Node.js 20 LTS; fallback: the clean macOS user account on the founder's laptop |
+| `npx github:...` fails on the VC's laptop | Node.js missing or older than 22 | Install Node.js 22 LTS; fallback: the clean macOS user account on the founder's laptop |
 | Agent errors with RPC rate limits | Public Base RPC is busy | Set `HODL_RPC_URL` to a private Base RPC on that machine |
 | Railway deploy fails before the demo | Build or env var problem | Run the API locally (`npm run dev`) and use `--api-url http://localhost:3000` on the founder's laptop |
 | Share price is 0 | The vault has no deposits | Run a neobank `buy` first |
