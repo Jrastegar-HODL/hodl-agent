@@ -1,3 +1,4 @@
+import { setTimeout as sleep } from "node:timers/promises";
 import { confirm as askConfirm, isCancel } from "@clack/prompts";
 import { Dapp, ethers } from "@dhedge/v2-sdk";
 import { z } from "zod";
@@ -102,8 +103,20 @@ export async function rebalance({
   const slippagePct = config.slippage_bps / 100;
   const txHashes: string[] = [];
 
-  const send = async (label: string, amountText: string, estimate: () => Promise<any>, sendTx: () => Promise<any>) => {
-    const gasUnits = estimatedGas(await estimate());
+  const send = async (
+    label: string,
+    amountText: string,
+    estimate: () => Promise<any>,
+    sendTx: (options: { gasLimit: ethers.BigNumber }) => Promise<any>,
+  ) => {
+    // Right after our own transaction, the RPC can answer from a node that has not seen it yet (spike step 1.3),
+    // so an estimate can fail once or twice before it succeeds.
+    let result = await estimate();
+    for (let attempt = 1; attempt <= 3 && !result.gas; attempt++) {
+      await sleep(3000);
+      result = await estimate();
+    }
+    const gasUnits = estimatedGas(result);
     const { maxFeePerGas } = await provider.getFeeData();
     const ok = await confirmTx(yes, {
       action: label,
@@ -112,7 +125,9 @@ export async function rebalance({
       estimatedGasEth: ethers.utils.formatEther(gasUnits.mul(maxFeePerGas ?? 0)),
     });
     if (!ok) throw new Error("Cancelled. Trades already sent stay on-chain.");
-    const tx: ethers.providers.TransactionResponse = await sendTx();
+    // Send with this gas limit, so the send does not estimate again on a lagging node. The trade re-quotes
+    // KyberSwap, and the new route can use more gas, hence the margin. Only gas actually used is paid.
+    const tx: ethers.providers.TransactionResponse = await sendTx({ gasLimit: gasUnits.mul(3).div(2) });
     console.log(`  Sent: ${EXPLORER_URL}/tx/${tx.hash}`);
     try {
       return await tx.wait(1);
@@ -122,17 +137,23 @@ export async function rebalance({
   };
 
   // The vault's router allowance must cover the trade; approve exactly the amount when it does not.
+  // Each token's allowance is read from the chain once, then tracked here: a read right after our own
+  // transaction can be stale.
+  const allowances = new Map<string, ethers.BigNumber>();
   const ensureAllowance = async (h: Holding, amountUnits: ethers.BigNumber) => {
-    const token = new ethers.Contract(h.address, erc20, provider);
-    const allowanceUnits: ethers.BigNumber = await token.allowance(config.vault_address, KYBERSWAP_ROUTER_ADDRESS);
-    if (allowanceUnits.gte(amountUnits)) return;
+    if (!allowances.has(h.address)) {
+      const token = new ethers.Contract(h.address, erc20, provider);
+      allowances.set(h.address, await token.allowance(config.vault_address, KYBERSWAP_ROUTER_ADDRESS));
+    }
+    if (allowances.get(h.address)!.gte(amountUnits)) return;
     const amountText = `${ethers.utils.formatUnits(amountUnits, h.decimals)} ${h.symbol} (approval)`;
     await send(
       `Vault approves KyberSwap to spend vault ${h.symbol}`,
       amountText,
       () => pool.approve(Dapp.KYBERSWAP, h.address, amountUnits, null, { estimateGas: true }),
-      () => pool.approve(Dapp.KYBERSWAP, h.address, amountUnits),
+      (options) => pool.approve(Dapp.KYBERSWAP, h.address, amountUnits, options),
     );
+    allowances.set(h.address, amountUnits);
   };
 
   for (const t of plan) {
@@ -155,9 +176,10 @@ export async function rebalance({
       `Vault trades ${from.symbol} -> ${to.symbol} on KyberSwap, slippage ${slippagePct}%`,
       amountText,
       () => pool.trade(Dapp.KYBERSWAP, from.address, to.address, amountUnits, slippagePct, null, { estimateGas: true }),
-      () => pool.trade(Dapp.KYBERSWAP, from.address, to.address, amountUnits, slippagePct),
+      (options) => pool.trade(Dapp.KYBERSWAP, from.address, to.address, amountUnits, slippagePct, options),
     );
     txHashes.push(receipt.transactionHash);
+    allowances.set(from.address, allowances.get(from.address)!.sub(amountUnits)); // the router took amountIn
     // Take the USDC received from the receipt, not a fresh read: the RPC can lag behind (spike step 1.5).
     if (t.side === "sell") usdcAvailableUnits = usdcAvailableUnits.add(received(receipt, usdcAddress, config.vault_address));
     else usdcAvailableUnits = usdcAvailableUnits.sub(amountUnits);
