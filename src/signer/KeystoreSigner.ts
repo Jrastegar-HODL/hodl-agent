@@ -57,6 +57,12 @@ export class KeystoreSigner implements Signer {
     }
   }
 
+  // The keystore stores its address in clear text, so this needs no password.
+  static async storedAddress(): Promise<string> {
+    if (!(await keystoreExists())) throw new Error("No keystore found. Run: hodl-agent init");
+    return ethers.utils.getAddress(ethers.utils.getJsonWalletAddress(await readFile(keystorePath(), "utf8")));
+  }
+
   async getAddress(): Promise<string> {
     return this.wallet.address;
   }

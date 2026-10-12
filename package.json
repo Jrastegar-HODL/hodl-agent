@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "HODL Agent: trade a Chamber vault on Base with your own key",
   "type": "module",
+  "exports": "./dist/index.js",
   "bin": {
     "hodl-agent": "dist/cli.js"
   },
