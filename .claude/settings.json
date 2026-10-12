@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": ["Bash(npm *)", "Bash(npx *)", "Bash(node *)", "Bash(git *)", "Bash(gh *)"],
+    "ask": ["Bash(npx tsx scripts/spike/*)", "Bash(npx tsx scripts/demo-neobank.ts *)", "Bash(git push --force *)", "Bash(gh repo delete *)"],
+    "deny": ["Read(./.env)", "Read(./.env.local)", "Read(~/.hodl/**)"]
+  }
+}

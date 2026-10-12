@@ -1,0 +1,6 @@
+.env
+.env.local
+.secrets/
+node_modules/
+dist/
+*.keystore.json
