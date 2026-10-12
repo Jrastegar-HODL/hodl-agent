@@ -4,7 +4,8 @@ import { z } from "zod";
 import * as config from "./config.js";
 import { rebalance } from "./rebalance.js";
 import { KeystoreSigner, keystoreExists } from "./signer/KeystoreSigner.js";
-import { EXPLORER_URL, getStatus } from "./vault.js";
+import { listen } from "./listen.js";
+import { EXPLORER_URL, getStatus, safeMessage } from "./vault.js";
 
 const program = new Command();
 
@@ -121,14 +122,15 @@ program
     }
   });
 
-program.command("listen").description("Receive weight signals on a local endpoint").action(() => {
-  console.log("listen: not implemented yet");
-});
+program
+  .command("listen")
+  .description("Receive weight signals on a local endpoint and trade them (needs HODL_AGENT_PASSWORD, HODL_SIGNAL_SECRET)")
+  .option("--port <port>", "local port", "8787")
+  .action(async (opts: { port: string }) => {
+    await listen({ port: z.coerce.number().int().min(1).max(65535).parse(opts.port) });
+  });
 
-// ethers errors can contain the RPC URL (and an RPC key in HODL_RPC_URL), so never print them raw.
 program.parseAsync().catch((err: unknown) => {
-  const e = err as { reason?: string; message?: string };
-  const message = e.reason ?? e.message ?? String(err);
-  console.error(`Error: ${message.replace(/https?:\/\/(?!basescan\.org)\S+/g, "[url hidden]")}`);
+  console.error(`Error: ${safeMessage(err)}`);
   process.exit(1);
 });

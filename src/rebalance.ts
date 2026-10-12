@@ -16,7 +16,7 @@ const erc20 = ["function allowance(address owner, address spender) view returns 
 const WeightsSchema = z.record(z.string(), z.number().min(0).max(100));
 
 // Weights must use config assets only (missing ones = 0) and sum to 100. Returns basis points per config symbol.
-function toWeightBps(weights: Record<string, number>, assets: Record<string, string>): Record<string, number> {
+export function toWeightBps(weights: Record<string, number>, assets: Record<string, string>): Record<string, number> {
   const bps: Record<string, number> = Object.fromEntries(Object.keys(assets).map((s) => [s, 0]));
   for (const [symbol, pct] of Object.entries(WeightsSchema.parse(weights))) {
     const known = Object.keys(assets).find((s) => s.toLowerCase() === symbol.toLowerCase());

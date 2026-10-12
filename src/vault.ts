@@ -4,6 +4,12 @@ import { getTrades, type TradeListItem } from "./report.js";
 
 export const EXPLORER_URL = "https://basescan.org";
 
+// ethers errors can contain the RPC URL (and an RPC key in HODL_RPC_URL), so never print them raw.
+export function safeMessage(err: unknown): string {
+  const e = err as { reason?: string; message?: string };
+  return (e.reason ?? e.message ?? String(err)).replace(/https?:\/\/(?!basescan\.org)\S+/g, "[url hidden]");
+}
+
 // ethers v5 hard-codes a 1.5 gwei priority fee, about 250x what Base needs (spike step 1.6). Ask the node instead.
 class BaseProvider extends ethers.providers.StaticJsonRpcProvider {
   async getFeeData(): Promise<ethers.providers.FeeData> {
