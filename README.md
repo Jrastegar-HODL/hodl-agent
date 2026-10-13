@@ -105,7 +105,7 @@ Not before they trade. Your system sends target weights to the agent on your own
 The HODL API reads the transaction receipt on Base and checks: success, sender = the vault's trader, target = the vault. Only then does it save the record. A trade that fails these checks gets `422 trade_not_verified`.
 
 **6. How do I get the best execution price?**
-Each swap routes through the KyberSwap aggregator, which searches Base DEXs for the best route at that moment; the MVP uses KyberSwap only. The slippage limit (`slippage_bps`, default 100 = 1%) makes the swap fail if the fill is worse than the quote. Base has no public mempool, which lowers the risk of sandwich attacks. For large orders, move the weights in smaller steps.
+Each swap routes through the KyberSwap aggregator, which searches Base DEXs for the best route at that moment; the MVP uses KyberSwap only. The slippage limit (`slippage_bps`, default 100 = 1%) makes the swap fail if the fill is worse than the quote. For large orders, move the weights in smaller steps.
 
 **7. How is the vault priced?**
 The vault contract values each asset with on-chain price feeds (Chainlink) and divides the total value by the number of shares. HODL does not set the price.
