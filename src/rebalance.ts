@@ -107,7 +107,6 @@ export async function rebalance({
     label: string,
     amountText: string,
     estimate: () => Promise<any>,
-    sendTx: (options: { gasLimit: ethers.BigNumber }) => Promise<any>,
   ) => {
     // Right after our own transaction, the RPC can answer from a node that has not seen it yet (spike step 1.3),
     // so an estimate can fail once or twice before it succeeds.
@@ -125,9 +124,12 @@ export async function rebalance({
       estimatedGasEth: ethers.utils.formatEther(gasUnits.mul(maxFeePerGas ?? 0)),
     });
     if (!ok) throw new Error("Cancelled. Trades already sent stay on-chain.");
-    // Send with this gas limit, so the send does not estimate again on a lagging node. The trade re-quotes
-    // KyberSwap, and the new route can use more gas, hence the margin. Only gas actually used is paid.
-    const tx: ethers.providers.TransactionResponse = await sendTx({ gasLimit: gasUnits.mul(3).div(2) });
+    // Send exactly the transaction that was estimated (the SDK returns its to + txData with the estimate).
+    // Calling pool.trade() again would re-quote KyberSwap, and a new route can need more gas than the limit.
+    // The fixed gas limit also stops the send from estimating again on a lagging node. Only gas used is paid.
+    const tx: ethers.providers.TransactionResponse = await pool.poolLogic.execTransaction(result.to, result.txData, {
+      gasLimit: gasUnits.mul(3).div(2),
+    });
     console.log(`  Sent: ${EXPLORER_URL}/tx/${tx.hash}`);
     try {
       return await tx.wait(1);
@@ -151,7 +153,6 @@ export async function rebalance({
       `Vault approves KyberSwap to spend vault ${h.symbol}`,
       amountText,
       () => pool.approve(Dapp.KYBERSWAP, h.address, amountUnits, null, { estimateGas: true }),
-      (options) => pool.approve(Dapp.KYBERSWAP, h.address, amountUnits, options),
     );
     allowances.set(h.address, amountUnits);
   };
@@ -176,7 +177,6 @@ export async function rebalance({
       `Vault trades ${from.symbol} -> ${to.symbol} on KyberSwap, slippage ${slippagePct}%`,
       amountText,
       () => pool.trade(Dapp.KYBERSWAP, from.address, to.address, amountUnits, slippagePct, null, { estimateGas: true }),
-      (options) => pool.trade(Dapp.KYBERSWAP, from.address, to.address, amountUnits, slippagePct, options),
     );
     txHashes.push(receipt.transactionHash);
     allowances.set(from.address, allowances.get(from.address)!.sub(amountUnits)); // the router took amountIn
