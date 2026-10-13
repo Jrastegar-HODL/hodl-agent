@@ -804,7 +804,7 @@ scheme. Push to GitHub so Railway redeploys.
 5. Terminal 2, in a clone of hodl-agent: `HODL_SIGNAL_SECRET=<secret> python3 examples/trend_strategy.py`. Leave both running until the demo.
 6. Record the product ID, the vault address and the deposit time in `docs/demo-notes.md`.
 
-**Done when:** `positions --client demo-user-1` shows shares, `GET /v1/strategies/{id}/trades` shows a new trade about every 15 minutes, and the deposit is more than 24 hours old at the demo start.
+**Done when:** `positions --client demo-user-1` shows shares, `GET /v1/strategies/{id}/trades` shows new trades each time the script prints `sent` (it checks every 15 minutes and sends only when the target changes; on recent data about once every 30–60 minutes), and the deposit is more than 24 hours old at the demo start.
 
 ### Step 3.7: Rehearsal
 
