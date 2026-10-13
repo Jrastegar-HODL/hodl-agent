@@ -29,8 +29,9 @@ read -s HODL_AGENT_PASSWORD; export HODL_AGENT_PASSWORD
 export HODL_SIGNAL_SECRET=$(openssl rand -hex 24)
 caffeinate -i npx github:Jrastegar-HODL/hodl-agent listen
 
-# 4. In a second terminal, in a clone of this repo: send signals at a fixed interval
-HODL_SIGNAL_SECRET=<same secret> INTERVAL_SECONDS=900 ./examples/signal-loop.sh
+# 4. In a second terminal, in a clone of this repo: run the example strategy (Python 3.9+, no installs)
+DRY_RUN=1 python3 examples/trend_strategy.py                # prints the target weights, sends nothing
+HODL_SIGNAL_SECRET=<same secret> python3 examples/trend_strategy.py
 ```
 
 Other commands:
@@ -58,6 +59,8 @@ curl -X POST http://127.0.0.1:8787/signal \
 - The agent answers `202 {"signal_id": "..."}` at once, then trades. A wrong secret gets `401`, invalid weights get `400`.
 - Signals run one at a time. If several arrive during a run, only the newest one runs next.
 - `GET /health` returns `{status, last_signal_at, last_result}`.
+
+[`examples/trend_strategy.py`](examples/trend_strategy.py) is a complete example in Python (standard library only). Part 1, `get_target_weights()`, is a simple trend model that holds cbBTC, WETH or USDC; replace it with your model. Part 2, `send_weights(weights)`, is the only code a fund adds: one POST to `/signal`. The script sends a signal at start and then only when the target changes. Run it with `python3 examples/trend_strategy.py`.
 
 **2. From code (Node.js).** Call the same function the CLI uses. You can bring your own key management by implementing the `Signer` interface. The key must be the vault's trader.
 

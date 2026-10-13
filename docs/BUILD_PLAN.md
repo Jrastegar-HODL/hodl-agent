@@ -239,7 +239,7 @@ hodl-agent/
     rebalance.ts         Target weights -> trades
     listen.ts            Local signal endpoint (Node built-in http module)
     report.ts            Sends trade records to the HODL API
-  examples/signal-loop.sh  Sends new weights at a fixed interval
+  examples/trend_strategy.py  Example Python strategy that sends weights to listen
   docs/spike-results.md  Copy from hodl-api
   package.json           "bin": {"hodl-agent": "dist/cli.js"}, "prepare": "tsc"
   README.md
@@ -670,18 +670,19 @@ Do step 2.10 only.
   run it next.
   GET /health: {status, last_signal_at, last_result}.
   Log each signal, its trades and the Basescan links.
-- examples/signal-loop.sh: bash. Sends POST /signal with curl, alternating
-  {"weights":{"cbBTC":60,"WETH":40}} and {"weights":{"cbBTC":40,"WETH":60}}, then sleeps
-  INTERVAL_SECONDS (default 900). Reads HODL_SIGNAL_SECRET and PORT (default 8787).
+- examples/trend_strategy.py: Python 3.9+, standard library only. A simple trend model on
+  Coinbase 15-minute candles picks cbBTC/WETH/USDC weights and sends POST /signal at start,
+  then only when the target changes. Reads HODL_SIGNAL_SECRET, PORT (default 8787),
+  INTERVAL_SECONDS (default 900) and DRY_RUN. Run: python3 examples/trend_strategy.py
   This script stands in for the asset manager's strategy system.
 - README.md: what the agent does; safety facts (the key is created and encrypted on this
   machine, the trader role cannot withdraw, max order size); quick start (init, onboard,
-  listen, signal-loop); how a fund connects its existing system (send POST /signal with
+  listen, python3 examples/trend_strategy.py); how a fund connects its existing system (send POST /signal with
   target weights, or call rebalance() from code); a 10-line library example.
 Push to GitHub.
 ```
 
-**Done when:** with `listen` running and `INTERVAL_SECONDS=120 ./examples/signal-loop.sh`, three signals in a row each produce trades in `GET /v1/strategies/{id}/trades`, with no person typing. A signal with a wrong secret returns 401.
+**Done when:** with `listen` running and `INTERVAL_SECONDS=120 python3 examples/trend_strategy.py`, three signals in a row each produce trades in `GET /v1/strategies/{id}/trades`, with no person typing. A signal with a wrong secret returns 401.
 
 ## 9. Day 3: distribution API, docs, deploy and rehearsal
 
@@ -800,7 +801,7 @@ scheme. Push to GitHub so Railway redeploys.
 2. Send about $10 of ETH on Base to the fund's trading address. At one signal every 15 minutes, gas costs about $2–6 per day (step 1.6 shows the real cost per swap); at one signal every 60 minutes, about a quarter of that.
 3. In hodl-api: `npx tsx scripts/demo-neobank.ts buy --product <id> --amount 20 --client demo-user-1`
 4. Terminal 1: type the keystore password with `read -s HODL_AGENT_PASSWORD`, then `export HODL_AGENT_PASSWORD HODL_SIGNAL_SECRET=<secret>`, then `caffeinate -i npx github:<org>/hodl-agent listen`.
-5. Terminal 2, in a clone of hodl-agent: `HODL_SIGNAL_SECRET=<secret> ./examples/signal-loop.sh`. Leave both running until the demo.
+5. Terminal 2, in a clone of hodl-agent: `HODL_SIGNAL_SECRET=<secret> python3 examples/trend_strategy.py`. Leave both running until the demo.
 6. Record the product ID, the vault address and the deposit time in `docs/demo-notes.md`.
 
 **Done when:** `positions --client demo-user-1` shows shares, `GET /v1/strategies/{id}/trades` shows a new trade about every 15 minutes, and the deposit is more than 24 hours old at the demo start.
