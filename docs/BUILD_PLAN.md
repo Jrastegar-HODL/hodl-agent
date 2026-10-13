@@ -798,7 +798,7 @@ scheme. Push to GitHub so Railway redeploys.
 **Founder does (Claude Code helps with the commands):**
 
 1. On the laptop, with the founder's own agent key: `init` (if not done), then `onboard --name "HODL Demo Fund" --manager "HODL Markets" --invite <ONBOARDING_API_KEY>`. Save the product ID.
-2. Send about $10 of ETH on Base to the fund's trading address. At one signal every 15 minutes, gas costs about $2–6 per day (step 1.6 shows the real cost per swap); at one signal every 60 minutes, about a quarter of that.
+2. Send about $10 of ETH on Base to the fund's trading address. The script checks every 15 minutes and trades only when the target changes (about once every 30–60 minutes on recent data), so gas costs about $0.50–3 per day (step 1.6 shows the real cost per swap).
 3. In hodl-api: `npx tsx scripts/demo-neobank.ts buy --product <id> --amount 20 --client demo-user-1`
 4. Terminal 1: type the keystore password with `read -s HODL_AGENT_PASSWORD`, then `export HODL_AGENT_PASSWORD HODL_SIGNAL_SECRET=<secret>`, then `caffeinate -i npx github:<org>/hodl-agent listen`.
 5. Terminal 2, in a clone of hodl-agent: `HODL_SIGNAL_SECRET=<secret> python3 examples/trend_strategy.py`. Leave both running until the demo.
@@ -868,7 +868,8 @@ The demo takes about 15 minutes and shows the full pipeline live on Base mainnet
 
 **30 minutes before**
 
-- [ ] In Postman, `GET /health` and `GET /v1/products` work, and the latest HODL Demo Fund trade is less than 20 minutes old.
+- [ ] In Postman, `GET /health` and `GET /v1/products` work.
+- [ ] The strategy script printed a line in the last 15 minutes, and `curl -s http://127.0.0.1:8787/health` shows `"ok":true` for the last signal. A trade only happens when the target changes, so an hour or more without one is normal.
 - [ ] HODL Admin holds at least 0.003 ETH. Neobank Omnibus holds at least 15 USDC and some ETH.
 - [ ] Postman environment "HODL Demo" is filled in. Basescan is open in a browser tab.
 - [ ] Terminal open in `hodl-api` for the demo neobank script.
@@ -884,7 +885,7 @@ The demo takes about 15 minutes and shows the full pipeline live on Base mainnet
 | 5 | VC | `curl -X POST http://127.0.0.1:8787/signal -H "x-signal-secret: $HODL_SIGNAL_SECRET" -d '{"weights":{"cbBTC":50,"WETH":50}}'` | The vault trades with no further input: two swaps signed by their key (Basescan: from = VC key, to = vault) |
 | 6 | VC | `npx github:<org>/hodl-agent status` | Holdings near 50/50, share price, the recorded trades |
 | 7 | Founder (as neobank) | `npx tsx scripts/demo-neobank.ts sell --product <HODL Demo Fund id> --shares <half> --client demo-user-1` | The vault contract pays the withdrawal as a pro-rata basket of USDC, WETH and cbBTC; the client's position updates |
-| 8 | Founder | Postman: `GET /v1/products`, then `GET /v1/strategies/{HODL Demo Fund id}/trades` | The VC's product in the catalogue; the HODL Demo Fund trades about every 15 minutes since setup, each from a signal with no person involved |
+| 8 | Founder | Postman: `GET /v1/products`, then `GET /v1/strategies/{HODL Demo Fund id}/trades` | The VC's product in the catalogue; the HODL Demo Fund trades since setup, each time its strategy's target changed (about every 30–60 minutes), each from a signal with no person involved |
 
 **Three points to say during the demo**
 
@@ -914,7 +915,7 @@ Use these fallbacks in this order. Do not invent other solutions; if none applie
 
 | Symptom | Likely cause | Action |
 | --- | --- | --- |
-| `insufficient funds for gas` | Wallet ETH too low | Send ETH on Base to that wallet. A trading key that receives a signal every 15 minutes uses about $2–6 of ETH per day |
+| `insufficient funds for gas` | Wallet ETH too low | Send ETH on Base to that wallet. A trading key running the example strategy uses about $0.50–3 of ETH per day |
 | `409 lockup_active` on a sell | Deposit is less than 24 hours old | Wait until `unlock_at`, or sell from the older `demo-user-1` position |
 | `listen` stops trading | The Mac slept or the terminal closed | Run `listen` with `caffeinate -i`; restart `listen` and the signal loop |
 | A signal returns 401 | Wrong or missing `x-signal-secret` | Use the same `HODL_SIGNAL_SECRET` in `listen` and in the sender |
