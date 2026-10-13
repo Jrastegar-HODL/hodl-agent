@@ -10,7 +10,7 @@ export function safeMessage(err: unknown): string {
   return (e.reason ?? e.message ?? String(err)).replace(/https?:\/\/(?!basescan\.org)\S+/g, "[url hidden]");
 }
 
-// ethers v5 hard-codes a 1.5 gwei priority fee, about 250x what Base needs (spike step 1.6). Ask the node instead.
+// ethers v5 hard-codes a 1.5 gwei priority fee, about 250x what Base needs. Ask the node instead.
 class BaseProvider extends ethers.providers.StaticJsonRpcProvider {
   async getFeeData(): Promise<ethers.providers.FeeData> {
     const [block, priorityFeeHex, gasPrice] = await Promise.all([
@@ -42,7 +42,7 @@ export type Holding = {
   valueUsdWei: ethers.BigNumber;
 };
 
-// Holdings of the config assets, priced with the vault's own oracle (assetValue, spike step 1.2).
+// Holdings of the config assets, priced with the vault's own oracle (assetValue).
 export async function readHoldings(dhedge: Dhedge, pool: Pool, assets: Record<string, string>): Promise<Holding[]> {
   const composition = await pool.getComposition();
   return Promise.all(

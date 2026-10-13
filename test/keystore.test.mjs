@@ -1,4 +1,4 @@
-// Step 2.8 test. Run after `npx tsc`: node test/keystore.test.mjs
+// Keystore and config test. Run after `npx tsc`: node test/keystore.test.mjs
 // Uses a throwaway HOME, so the real ~/.hodl is never touched. Any 12+ character password works.
 import { mkdtemp, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";

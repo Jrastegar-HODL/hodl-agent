@@ -85,7 +85,7 @@ console.log(txHashes);
 3. Sell overweight assets to USDC first, then buy underweight assets with USDC. Trades go through KyberSwap.
 4. After each trade, send the transaction hash to the HODL API (`POST /v1/strategies/{id}/trades`). If the API cannot be reached after 3 tries, the agent warns you: the trade is still valid on-chain, it just isn't recorded.
 
-Day 1 test results and contract details: [docs/spike-results.md](docs/spike-results.md).
+On-chain test results and contract details: [docs/spike-results.md](docs/spike-results.md).
 
 ## Technical FAQ for asset managers
 

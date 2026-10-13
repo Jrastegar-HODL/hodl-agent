@@ -108,7 +108,7 @@ export async function rebalance({
     amountText: string,
     estimate: () => Promise<any>,
   ) => {
-    // Right after our own transaction, the RPC can answer from a node that has not seen it yet (spike step 1.3),
+    // Right after a transaction from this wallet, the RPC can answer from a node that has not seen it yet,
     // so an estimate can fail once or twice before it succeeds.
     let result = await estimate();
     for (let attempt = 1; attempt <= 3 && !result.gas; attempt++) {
@@ -139,8 +139,8 @@ export async function rebalance({
   };
 
   // The vault's router allowance must cover the trade; approve exactly the amount when it does not.
-  // Each token's allowance is read from the chain once, then tracked here: a read right after our own
-  // transaction can be stale.
+  // Each token's allowance is read from the chain once, then tracked here: a read right after a
+  // transaction from this wallet can be stale.
   const allowances = new Map<string, ethers.BigNumber>();
   const ensureAllowance = async (h: Holding, amountUnits: ethers.BigNumber) => {
     if (!allowances.has(h.address)) {
@@ -180,7 +180,7 @@ export async function rebalance({
     );
     txHashes.push(receipt.transactionHash);
     allowances.set(from.address, allowances.get(from.address)!.sub(amountUnits)); // the router took amountIn
-    // Take the USDC received from the receipt, not a fresh read: the RPC can lag behind (spike step 1.5).
+    // Take the USDC received from the receipt, not a fresh read: the RPC can lag behind.
     if (t.side === "sell") usdcAvailableUnits = usdcAvailableUnits.add(received(receipt, usdcAddress, config.vault_address));
     else usdcAvailableUnits = usdcAvailableUnits.sub(amountUnits);
     await reportTrade(config, receipt.transactionHash, signal);
